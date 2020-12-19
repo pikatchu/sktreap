@@ -252,14 +252,17 @@ private base class Node<+T> {
    */
   fun set<V>[T: V](index: Int, value: V): Branch<V>
   | Leaf() -> throwOutOfBounds()
-  | Branch(left, right, v, p, s) ->
-    leftSize = left.size();
+  | thisBranch @ Branch _ ->
+    leftSize = thisBranch.left.size();
+    branch: Branch<V> = thisBranch;
     index.compare(leftSize) match {
-    // I would like to use the `!b.{thing} = {thing2}` syntax stuff here
-    // but I cannot due to typing of `b` with `T` but `value: T`.
-    | LT() -> Branch(left.set(index, value), right, v, p, s)
-    | GT() -> Branch(left, right.set(index - leftSize - 1, value), v, p, s)
-    | EQ() -> Branch(left, right, value, p, s)
+    | LT() ->
+      !branch.left[index] = value;
+      branch
+    | GT() ->
+      !branch.right[index - leftSize - 1] = value;
+      branch
+    | EQ() -> branch
     }
 
   /**
