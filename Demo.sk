@@ -1,0 +1,31 @@
+fun main(): void {
+  l = Treap::mcreateFromItems(Vector::mfillBy(10, i -> i));
+  l2 = Treap::mcreateFromItems(Vector::mfillBy(10, i -> i + 10));
+
+  print_string(`l.size(): ${l.size()}`);
+  print_string(`l2.size(): ${l2.size()}`);
+
+  l.extendTreap(l2);
+
+  for (i in l.view(8, 11)) {
+    print_string(i);
+  };
+
+  print_string(l.toString());
+  print_string(`Size: ${l.size()}`);
+
+  l.delete(2);
+  l.set(1, 10);
+
+  print_string(`At 18: ${l.get(18)}`);
+
+  l.set(18, 20);
+
+  print_string(l.toString());
+
+  print_string("Depth: " + l.depth().toString());
+
+  s = Treap["start", "the", "sequence", "now", "!"];
+  print_string(s.toString());
+  print_string(s.join(" "));
+}
