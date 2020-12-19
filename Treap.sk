@@ -1,4 +1,3 @@
-
 module Treap;
 
 /**
@@ -6,21 +5,21 @@ module Treap;
  *
  * # What is a Treap?
  *
- * A traditional Treap is a binary-search-tree (BST) where each node also 
+ * A traditional Treap is a binary-search-tree (BST) where each node also
  * contains a random `priority` that is used to enforce the heap-property on the
- * tree. It's effectively two-in-one: a BST on the values and a heap on the 
+ * tree. It's effectively two-in-one: a BST on the values and a heap on the
  * priority. Turns out these constraints imply a unique structure for a set of
  * values and priorities and results in a balanced BST.
  *
- * This implementation uses a slight extension to turn the Treap into a 
+ * This implementation uses a slight extension to turn the Treap into a
  * sequence instead of ordering based on value. Each node also maintains the
  * size of the sub-tree (including itself). This allows for efficient, O(log n),
  * index-based lookups. Thus, we can implement an indexed sequence with a Treap.
- * 
+ *
  * # Efficiency
  *
  * The Treap is not very space-efficient as each node must store the `size` of
- * the sub-tree as well as the random `priority` of the node, as well as the 
+ * the sub-tree as well as the random `priority` of the node, as well as the
  * value and left-right sub-trees.
  *
  * However, the Treap is a "persistent" container implementation that has
@@ -29,20 +28,15 @@ module Treap;
  * of linear.
  *
  * # Implementation
- * 
+ *
  * The mutable `Treap` class is a simple wrapper around the actual `Node`s
  * with a random-number-generator used to create the priority of inserted nodes.
  */
 mutable class .Treap<+T: Hashable>(
-    private mutable node: Node<T>,
-    private random: mutable Random,
-  ) 
-  extends .MutableIndexedSequence<T>
-  uses 
-    Show[T: readonly Show] 
-  {
-
- //////////////////////////////////////////////////////////////////////////////
+  private mutable node: Node<T>,
+  private random: mutable Random,
+) extends .MutableIndexedSequence<T> uses Show[T: readonly Show] {
+  //////////////////////////////////////////////////////////////////////////////
   // # Creating a Treap
   //////////////////////////////////////////////////////////////////////////////
 
@@ -81,7 +75,7 @@ mutable class .Treap<+T: Hashable>(
   //////////////////////////////////////////////////////////////////////////////
   // # Copying
   //////////////////////////////////////////////////////////////////////////////
-  
+
   readonly fun chill(): this {
     Treap(this.node, freeze(this.random))
   }
@@ -100,8 +94,8 @@ mutable class .Treap<+T: Hashable>(
 
   readonly fun get(index: Int): T {
     this.node.maybeGet(index) match {
-      | None() -> throwOutOfBounds()
-      | Some(v) -> v
+    | None() -> throwOutOfBounds()
+    | Some(v) -> v
     }
   }
 
@@ -145,15 +139,12 @@ mutable class .Treap<+T: Hashable>(
   mutable fun extendTreap(second: readonly Treap<T>): Void {
     this.!node = this.node.concat(second.node)
   }
-  
+
   //////////////////////////////////////////////////////////////////////////////
   // # Selecting Portions of a Sequence
   //////////////////////////////////////////////////////////////////////////////
 
-  readonly fun slice(
-    start: Int,
-    end: Int = Int::max,
-  ): IndexedSequence<T> {
+  readonly fun slice(start: Int, end: Int = Int::max): IndexedSequence<T> {
     Vector::createFromIterator(this.view(start, end))
   }
 
@@ -176,48 +167,47 @@ mutable class .Treap<+T: Hashable>(
  * a priority, and the size of the tree at that node.
  *
  * The heap property is defined as a max-heap, so priorities always decrease as
- * you descend into sub-trees. 
+ * you descend into sub-trees.
  */
 private base class Node<+T> {
-
   children =
-    | Leaf()
-    | Branch(
-        left: Node<T>,
-        right: Node<T>,
-        value: T,
-        p: Int, // priority
-        s: Int, // size
-      )
+  | Leaf()
+  | Branch(
+    left: Node<T>,
+    right: Node<T>,
+    value: T,
+    p: Int, // priority
+    s: Int, // size
+  )
 
   fun size(): Int
-    | Leaf() -> 0
-    | Branch(_, _, _, _, s) -> s
+  | Leaf() -> 0
+  | Branch(_, _, _, _, s) -> s
 
   fun depth(): Int
-    | Leaf() -> 0
-    | Branch(left, right, _, _, _) ->
-      max(left.depth(), right.depth()) + 1
+  | Leaf() -> 0
+  | Branch(left, right, _, _, _) -> max(left.depth(), right.depth()) + 1
 
   fun maybeGet(index: Int): ?T {
     node = this;
     loop {
       node match {
-        | Leaf() -> break None()
-        | Branch(left, right, value, _, _) -> {
-          leftSize = left.size();
-          index.compare(leftSize) match {
-            | LT() -> !node = left
-            | GT() -> !node = right; !index = index - leftSize - 1
-            | EQ() -> break Some(value)
-          }
+      | Leaf() -> break None()
+      | Branch(left, right, value, _, _) ->
+        leftSize = left.size();
+        index.compare(leftSize) match {
+        | LT() -> !node = left
+        | GT() ->
+          !node = right;
+          !index = index - leftSize - 1
+        | EQ() -> break Some(value)
         }
       }
     }
   }
 
   /** Recursive implementation. */
-  // fun maybeGet(index: Int): ?T 
+  // fun maybeGet(index: Int): ?T
   //   | Leaf() -> None()
   //   | Branch(left, right, value, _, _) -> {
   //     ls = left.size();
@@ -235,43 +225,41 @@ private base class Node<+T> {
   }
 
   fun insert<V>[T: V](index: Int, value: V, priority: Int): Branch<V>
-    | Leaf() -> Branch(Leaf(), Leaf(), value, priority, 1)
-    | Branch(left, right, v, p, s) -> {
-      ls = left.size();
-      if (index <= ls) {
-        nleft = left.insert(index, value, priority);
-        n = Branch(nleft, right, v, p, s + 1);
-        if (nleft.p > p) {
-          n.rotateRight()
-        } else {
-          n
-        }
+  | Leaf() -> Branch(Leaf(), Leaf(), value, priority, 1)
+  | Branch(left, right, v, p, s) ->
+    ls = left.size();
+    if (index <= ls) {
+      nleft = left.insert(index, value, priority);
+      n = Branch(nleft, right, v, p, s + 1);
+      if (nleft.p > p) {
+        n.rotateRight()
       } else {
-        nright = right.insert(index - ls - 1, value, priority);
-        n = Branch(left, nright, v, p, s + 1);
-        if (nright.p > p) {
-          n.rotateLeft()
-        } else {
-          n
-        }
+        n
+      }
+    } else {
+      nright = right.insert(index - ls - 1, value, priority);
+      n = Branch(left, nright, v, p, s + 1);
+      if (nright.p > p) {
+        n.rotateLeft()
+      } else {
+        n
       }
     }
-  
+
   /**
    * Replace a given `index` with `value`. This leaves the priority of the node
    * un-changed so that no re-heaping is needed.
    */
-  fun set<V>[T: V](index: Int, value: V): Branch<V> 
-    | Leaf() -> throwOutOfBounds()
-    | Branch(left, right, v, p, s) -> {
-        leftSize = left.size();
-        index.compare(leftSize) match {
-          // I would like to use the `!b.{thing} = {thing2}` syntax stuff here
-          // but I cannot due to typing of `b` with `T` but `value: T`.
-          | LT() -> Branch(left.set(index, value), right, v, p, s)
-          | GT() -> Branch(left, right.set(index - leftSize - 1, value), v, p, s)
-          | EQ() -> Branch(left, right, value, p, s)
-        }
+  fun set<V>[T: V](index: Int, value: V): Branch<V>
+  | Leaf() -> throwOutOfBounds()
+  | Branch(left, right, v, p, s) ->
+    leftSize = left.size();
+    index.compare(leftSize) match {
+    // I would like to use the `!b.{thing} = {thing2}` syntax stuff here
+    // but I cannot due to typing of `b` with `T` but `value: T`.
+    | LT() -> Branch(left.set(index, value), right, v, p, s)
+    | GT() -> Branch(left, right.set(index - leftSize - 1, value), v, p, s)
+    | EQ() -> Branch(left, right, value, p, s)
     }
 
   /**
@@ -279,38 +267,37 @@ private base class Node<+T> {
    * as we do not need to linearly traverse the items of `this` or `other`.
    */
   fun concat<V>[T: V](other: Node<V>): Node<V>
-    | Leaf() -> other
-    | Branch(tleft, tright, tv, tp, _) -> other match {
-      | Leaf() -> this
-      | Branch(oleft, oright, ov, op, _) -> {
-        if (tp > op) {
-          nright = tright.concat(other);
-          Branch(tleft, nright, tv, tp, tleft.size() + nright.size() + 1)
-        } else {
-          nleft = this.concat(oleft);
-          Branch(nleft, oright, ov, op, nleft.size() + oright.size() + 1)
-        }
+  | Leaf() -> other
+  | Branch(tleft, tright, tv, tp, _) ->
+    other match {
+    | Leaf() -> this
+    | Branch(oleft, oright, ov, op, _) ->
+      if (tp > op) {
+        nright = tright.concat(other);
+        Branch(tleft, nright, tv, tp, tleft.size() + nright.size() + 1)
+      } else {
+        nleft = this.concat(oleft);
+        Branch(nleft, oright, ov, op, nleft.size() + oright.size() + 1)
       }
     }
 
   /**
    * Remove the value at `index`; throws `OutOfBounds` if the index is invalid.
-   * 
+   *
    * @returns (new_root, removed_value)
    */
   fun remove(index: Int): (Node<T>, T)
-    | Leaf() -> throwOutOfBounds()
-    | Branch(left, right, v, p, s) -> {
-        leftSize = left.size();
-        index.compare(leftSize) match {
-          | LT() -> 
-            (nleft, removed) = left.remove(index);
-            (Branch(nleft, right, v, p, s - 1), removed)
-          | GT() ->
-            (nright, removed) = right.remove(index - leftSize - 1);
-            (Branch(left, nright, v, p, s - 1), removed)
-          | EQ() -> (left.concat(right), v)
-        }
+  | Leaf() -> throwOutOfBounds()
+  | Branch(left, right, v, p, s) ->
+    leftSize = left.size();
+    index.compare(leftSize) match {
+    | LT() ->
+      (nleft, removed) = left.remove(index);
+      (Branch(nleft, right, v, p, s - 1), removed)
+    | GT() ->
+      (nright, removed) = right.remove(index - leftSize - 1);
+      (Branch(left, nright, v, p, s - 1), removed)
+    | EQ() -> (left.concat(right), v)
     }
 
   /**
@@ -335,19 +322,18 @@ private base class Node<+T> {
     index = start;
     loop {
       node match {
-        | Leaf() -> break void
-        | b@Branch(left, right, _, _, _) -> {
-          ls = left.size();
-          if (index < ls) {
-            stack.push(b);
-            !node = left
-          } else if (index > ls) {
-            !node = right;
-            !index = index - ls - 1
-          } else {
-            stack.push(b);
-            break void
-          }
+      | Leaf() -> break void
+      | b @ Branch(left, right, _, _, _) ->
+        ls = left.size();
+        if (index < ls) {
+          stack.push(b);
+          !node = left
+        } else if (index > ls) {
+          !node = right;
+          !index = index - ls - 1
+        } else {
+          stack.push(b);
+          break void
         }
       }
     };
@@ -355,29 +341,28 @@ private base class Node<+T> {
     loop {
       // Pop stack, yield the value, and continue to the right.
       stack.maybePop() match {
-        | None() -> break void
-        | Some(Branch(_, right, value, _, _)) ->
-          if (start == end) {
-            break void
-          } else {
-            yield value;
-          };
-          !node = right;
-          !start = start + 1
+      | None() -> break void
+      | Some(Branch(_, right, value, _, _)) ->
+        if (start == end) {
+          break void
+        } else {
+          yield value;
+        };
+        !node = right;
+        !start = start + 1
       };
 
       // Travel down left, pushing nodes on to the stack.
       loop {
         node match {
-          | Leaf() -> break void
-          | b@Branch(left, _, _, _, _) ->
-            stack.push(b);
-            !node = left
+        | Leaf() -> break void
+        | b @ Branch(left, _, _, _, _) ->
+          stack.push(b);
+          !node = left
         }
       }
     }
   }
-
 
   /**
    * Rotates a tree to the left.
@@ -385,17 +370,14 @@ private base class Node<+T> {
    *        Y               X
    *      /  \            /  \
    *     X    C   <<===  A    Y
-   *    / \                  / \ 
+   *    / \                  / \
    *   A   B                B   C
    */
   private fun rotateLeft(): Branch<T> {
     this match {
-      | Branch(a, Branch(b, c, yv, yp, _ys), xv, xp, xs) ->
-          Branch(
-            Branch(a, b, xv, xp, a.size() + b.size() + 1),
-            c, yv, yp, xs
-          )
-      | _ -> invariant_violation("invalid rotateLeft()")
+    | Branch(a, Branch(b, c, yv, yp, _ys), xv, xp, xs) ->
+      Branch(Branch(a, b, xv, xp, a.size() + b.size() + 1), c, yv, yp, xs)
+    | _ -> invariant_violation("invalid rotateLeft()")
     }
   }
 
@@ -405,18 +387,14 @@ private base class Node<+T> {
    *        Y               X
    *      /  \            /  \
    *     X    C   ===>>  A    Y
-   *    / \                  / \ 
+   *    / \                  / \
    *   A   B                B   C
    */
   private fun rotateRight(): Branch<T> {
     this match {
-      | Branch(Branch(a, b, xv, xp, _xs), c, yv, yp, ys) ->
-          Branch(
-            a,
-            Branch(b, c, yv, yp, b.size() + c.size() + 1),
-            xv, xp, ys
-          )
-      | _ -> invariant_violation("invalid rotateRight()")
+    | Branch(Branch(a, b, xv, xp, _xs), c, yv, yp, ys) ->
+      Branch(a, Branch(b, c, yv, yp, b.size() + c.size() + 1), xv, xp, ys)
+    | _ -> invariant_violation("invalid rotateRight()")
     }
   }
 }
